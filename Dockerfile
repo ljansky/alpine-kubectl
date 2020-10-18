@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM docker:latest
 
 ENV KUBE_LATEST_VERSION="v1.19.2"
 
@@ -14,5 +14,3 @@ RUN apk add --no-cache ca-certificates bash git openssh curl docker \
     && chmod g+rwx /config
 
 WORKDIR /config
-
-CMD bash
