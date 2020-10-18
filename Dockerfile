@@ -15,4 +15,4 @@ RUN apk add --no-cache ca-certificates bash git openssh-client openssh curl \
 
 WORKDIR /config
 
-CMD ["sh"]
+CMD bash
