@@ -9,10 +9,44 @@ RUN apk add --no-cache ca-certificates bash git openssh-client openssh curl \
     && mkdir /config \
     && chmod g+rwx /config
 
+RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
+ENV DOCKER_CHANNEL stable
+ENV DOCKER_VERSION 19.03.13
 
-#ENV DOCKER_TLS_CERTDIR=/certs
-#RUN mkdir /certs /certs/client && chmod 1777 /certs /certs/client
+RUN set -eux; \
+  \
+# this "case" statement is generated via "update.sh"
+	apkArch="$(apk --print-arch)"; \
+	case "$apkArch" in \
+# amd64
+		x86_64) dockerArch='x86_64' ;; \
+# arm32v6
+		armhf) dockerArch='armel' ;; \
+# arm32v7
+		armv7) dockerArch='armhf' ;; \
+# arm64v8
+		aarch64) dockerArch='aarch64' ;; \
+		*) echo >&2 "error: unsupported architecture ($apkArch)"; exit 1 ;;\
+	esac; \
+	\
+	if ! wget -O docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNEL}/${dockerArch}/docker-${DOCKER_VERSION}.tgz"; then \
+		echo >&2 "error: failed to download 'docker-${DOCKER_VERSION}' from '${DOCKER_CHANNEL}' for '${dockerArch}'"; \
+		exit 1; \
+	fi; \
+	\
+	tar --extract \
+		--file docker.tgz \
+		--strip-components 1 \
+		--directory /usr/local/bin/ \
+	; \
+	rm docker.tgz; \
+	\
+	dockerd --version; \
+	docker --version
+
+ENV DOCKER_TLS_CERTDIR=/certs
+RUN mkdir /certs /certs/client && chmod 1777 /certs /certs/client
 
 WORKDIR /config
 
-CMD bash
+CMD ["sh"]
